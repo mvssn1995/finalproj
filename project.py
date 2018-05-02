@@ -155,8 +155,8 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 					else:
 						hsp[curr_score].append(alignment)
 
-	print(hsp)				
-
+	print(hsp)	
+	return hsp			
 
 def compute_score(word, word2, blosum_matrix):
 	c0 = word[0] + word2[0]
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 	matrix_dict = construct_blosum_matrix()
 	dict_q, dict_s = record_indices(words_q, words_s)
 	
-	align(query, subject, words_q, words_s, dict_q, dict_s, matrix_dict, threshold)
+	hsp = align(query, subject, words_q, words_s, dict_q, dict_s, matrix_dict, threshold)
 
 
 
