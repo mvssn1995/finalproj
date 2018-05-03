@@ -11,6 +11,10 @@ def extract_params(file):
 
 		if(index == 0):
 			query = line 
+
+		elif(line in '\n'):
+			continue
+		
 		else:
 			subject = line
 
@@ -80,7 +84,7 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 		neighborhood_words = [word] + neighborhood_words
 
 		for nword in neighborhood_words:
-			
+				
 			if(nword in dict_s):
 				indices = dict_s[nword]
 				max_score = compute_score(word, nword, blosum_matrix)
@@ -115,11 +119,16 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 
 							if(curr_score >= max_score):
 								max_score = curr_score
+
+						if(word == 'CMV' and nword == 'CTV'):
+							print(curr_score)
 						wr += 1
 						ir += 1
-								
+
 
 					while((wl >= 0) and (il >= 0)):
+						if(word == 'CMV' and nword == 'CTV'):
+							print(curr_score)
 							
 						if(str(query[wl] + subject[il]) in blosum_matrix):
 							pair = query[wl] + subject[il]
@@ -132,12 +141,13 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 							break
 
 						else:
-							curr_score += pair_score
+							temp = curr_score + pair_score
 
-							if(curr_score < (max_score + drop)):
+							if(temp < (max_score + drop)):
 								break
 
 							else:
+								curr_score += pair_score
 								alignment[0] = query[wl] + alignment[0]
 								alignment[1] = subject[il] + alignment[1]
 
@@ -147,7 +157,8 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 						wl -= 1
 						il -= 1
 
-					# print('alignment= ' + str(alignment) + " " + str(curr_score))
+					if(word == 'CMV' and nword == 'CTV'):
+						print('alignment= ' + str(alignment) + " " + str(curr_score)) + " " + word
 					
 					alignment = alignment[0] + "," + alignment[1]
 					if(alignment not in hsp):
