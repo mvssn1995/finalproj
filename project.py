@@ -150,10 +150,10 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 
 					print('alignment= ' + str(alignment) + " " + str(curr_score))
 					
-					if(curr_score not in hsp):
-						hsp[curr_score] = [alignment]
-					else:
-						hsp[curr_score].append(alignment)
+					alignment = alignment[0] + "," + alignment[1]
+					if(alignment not in hsp):
+						hsp[alignment] = curr_score
+					
 
 	print(hsp)	
 	return hsp			
