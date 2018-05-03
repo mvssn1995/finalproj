@@ -72,7 +72,6 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 	drop = -3
 
 	for windex in range(lenq):
-		print(windex)
 		word = words_q[windex]
 		wr = windex + 3
 		wl = windex - 1
@@ -148,7 +147,7 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 						wl -= 1
 						il -= 1
 
-					print('alignment= ' + str(alignment) + " " + str(curr_score))
+					# print('alignment= ' + str(alignment) + " " + str(curr_score))
 					
 					alignment = alignment[0] + "," + alignment[1]
 					if(alignment not in hsp):
