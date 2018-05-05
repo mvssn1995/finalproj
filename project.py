@@ -1,4 +1,6 @@
 import sys
+import math
+import time
 
 def extract_params(file):
 	f = open(file, 'r')
@@ -10,17 +12,16 @@ def extract_params(file):
 		line = line.strip()
 
 		if(index == 0):
-			query = line 
-
+			query = line
 		elif(line in '\n'):
 			continue
-		
 		else:
 			subject = line
 
 		index += 1
 
 	return query,subject
+
 
 def split_query_subject(query, subject):
 	l = len(query)
@@ -30,20 +31,19 @@ def split_query_subject(query, subject):
 	words_query = []
 	words_subject = []
 	
-	#assumng the query and subject are of at least length 3
+	#Assuming the query and subject are of at least length 3
 	while((i != l-1) and (i != l-2)):
 		word_query = query[i] + query[i+1] + query[i+2]
 		words_query.append(word_query)
-
 		i += 1
 
 	while((j != m-1) and (j != m-2)):
 		word_subject = subject[j] + subject[j+1] + subject[j+2]
 		words_subject.append(word_subject)
-
 		j += 1
 
 	return words_query,words_subject
+
 
 def record_indices(query, subject):
 	query_dict = {}
@@ -55,7 +55,6 @@ def record_indices(query, subject):
 			query_dict[i].append(index) 
 		else:
 			query_dict[i] = [index]
-		
 		index += 1
 
 	index = 0
@@ -64,14 +63,14 @@ def record_indices(query, subject):
 			subject_dict[i].append(index)
 		else:
 			subject_dict[i] = [index]
-		
 		index += 1
 
 	return query_dict,subject_dict
 
+
 def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, threshold):
 	lenq = len(words_q)
-	lens = len(words_s)
+	# High Scoring Segment Pair
 	hsp = {}
 	drop = -3
 
@@ -80,11 +79,9 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 		wr = windex + 3
 		wl = windex - 1
 		neighborhood_words = find_neighborhood_words(word, blosum_matrix, threshold)
-
 		neighborhood_words = [word] + neighborhood_words
 
 		for nword in neighborhood_words:
-				
 			if(nword in dict_s):
 				indices = dict_s[nword]
 				max_score = compute_score(word, nword, blosum_matrix)
@@ -96,22 +93,17 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 					il = i - 1
 
 					while((wr < len(query)) and (ir < len(subject))):   #extend to the right
-
 						if(str(query[wr] + subject[ir]) in blosum_matrix):
 							pair = query[wr] + subject[ir]
 						else:
 							pair = subject[ir] + query[wr]
-
 						pair_score = blosum_matrix[pair]
 
 						if(pair_score < -3):
 							break
-
 						else:
-
 							if((curr_score + pair_score) < (max_score + drop)):
 								break
-
 							else:
 								curr_score += pair_score
 								alignment[0] += query[wr]
@@ -120,32 +112,25 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 							if(curr_score >= max_score):
 								max_score = curr_score
 
-						if(word == 'CMV' and nword == 'CTV'):
-							print(curr_score)
 						wr += 1
 						ir += 1
 
 
 					while((wl >= 0) and (il >= 0)):
-						if(word == 'CMV' and nword == 'CTV'):
-							print(curr_score)
-							
+
 						if(str(query[wl] + subject[il]) in blosum_matrix):
 							pair = query[wl] + subject[il]
 						else:
 							pair = subject[il] + query[wl]
-
 						pair_score = blosum_matrix[pair]
 
 						if(pair_score < -3):
 							break
-
 						else:
 							temp = curr_score + pair_score
 
 							if(temp < (max_score + drop)):
 								break
-
 							else:
 								curr_score += pair_score
 								alignment[0] = query[wl] + alignment[0]
@@ -157,16 +142,19 @@ def align(query, subject, words_q, words_s, dict_q, dict_s, blosum_matrix, thres
 						wl -= 1
 						il -= 1
 
-					if(word == 'CMV' and nword == 'CTV'):
-						print('alignment= ' + str(alignment) + " " + str(curr_score)) + " " + word
-					
-					alignment = alignment[0] + "," + alignment[1]
+					alignment = alignment[0] + ", " + alignment[1]
+
 					if(alignment not in hsp):
 						hsp[alignment] = curr_score
-					
 
-	print(hsp)	
-	return hsp			
+	hsp = dict((k, v) for k, v in hsp.items() if v >= threshold)
+	print 'High Scoring Segment Pairs and their corresponding scores: ' + str(hsp) + '\n'
+
+	maximum = max(hsp, key=hsp.get)
+	print('The maximal scoring pair of the query and subject is '
+		  + str(maximum) + ' with a score of ' + str(hsp[maximum]))
+	return hsp
+
 
 def compute_score(word, word2, blosum_matrix):
 	c0 = word[0] + word2[0]
@@ -200,7 +188,6 @@ def compute_score(word, word2, blosum_matrix):
 	score = score0 + score1 + score2
 	
 	return score
-
 
 
 def find_neighborhood_words(word, blosum_matrix, threshold):
@@ -272,20 +259,63 @@ def construct_blosum_matrix():
 
 	return matrix_dict 
 
+
+# To-Do
+def calc_p_value(e_val, words_q, words_s):
+	# p-value is probability that an alignment with this score occurs by chance in a database of size n
+	# p = e/N
+
+	lenq = len(words_q)
+	lens = len(words_s)
+	# print('Length of first sequence is', lenq)
+	# print('Length of second sequence is', lens)
+
+	N = lenq + lens
+
+	p_val = e_val/N
+
+	return p_val
+
+
+# To-Do
+def calc_e_value(words_q, words_s, threshold):
+	# e-value is number of matches with this score one can expect to find by chance in a database of size n
+	# e = p*N
+
+	# E = k*m*n * exp(-l*T)
+
+	m = len(words_q)
+	n = len(words_s)
+	# print('Length of first sequence is', m)
+	# print('Length of second sequence is', n)
+	k = 0.318 # k-value for Blosum62 which is what we're using
+	l = 0.3176 # lambda value for Blosum62
+	T = threshold
+
+	e_val = k*m*n * math.exp(-l*T)
+
+	return e_val
+
+
 if __name__ == '__main__':
-	args = sys.argv 
+	start_time = time.time()
+	args = sys.argv
 	file = args[1]
 	threshold = args[2]
 	threshold = int(threshold)
 
 	query,subject = extract_params(file)
 	words_q,words_s = split_query_subject(query, subject)
-	
+
 	matrix_dict = construct_blosum_matrix()
 	dict_q, dict_s = record_indices(words_q, words_s)
-	
+
 	hsp = align(query, subject, words_q, words_s, dict_q, dict_s, matrix_dict, threshold)
 
+	e_val = calc_e_value(query, subject, threshold)
+	print 'E value is ' + str(e_val) + '\n'
 
+	p_val = calc_p_value(e_val, query, subject)
+	print 'P value is ' + str(p_val) + '\n'
 
-
+	print 'Program took ' + str(time.time() - start_time) + ' seconds to run.'
